@@ -95,6 +95,94 @@ since image features is large file so we save into pickel document
 pickle.dump(image_features,open('image_features_VGG.pkl','wb'))
 ```
 
-Then define function to get inbuilt dataset 
+Then define function to get split our training and testing dataset
+```
+def trainimage_and_description(description,image_features,trainfilename,maxcount):
+  count=0
+  trainimage={}
+  traindescription={}
+  text=open(trainfilename,'r').read()
+  text=text.split()
+  for k in text:
+    k=k.split('.')[0]
+    if count>maxcount:
+      break
+    if k in image_features.keys():
+      count+=1
+      trainimage[k]=image_features[k]
+      traindescription[k]=description[k]
+  return trainimage,traindescription
+
+def valimage_and_description(description,image_features,valfilename,maxcount):
+  valimage={}
+  valdescription={}
+  count=0
+  text=open(valfilename,'r').read()
+  text=text.split()
+  for k in text:
+    if count>maxcount:
+      break
+    k=k.split('.')[0]
+    if k in image_features.keys():
+      count+=1
+      valimage[k]=image_features[k]
+      valdescription[k]=description[k]
+  return valimage,valdescription
+  
+ ```
+ 
+ Then we will split dataset into training and testing dataset
+ 1200 images and description in training dataset and 300 in validation dataset
+ ```
+ valimage,valdescription=valimage_and_description(description,image_features,'/content/drive/My Drive/Flickr_8k.testImages.txt',300)
+trainimage,traindescription=trainimage_and_description(description,image_features,'/content/drive/My Drive/Flickr_8k.trainImages.txt',1200)
+```
+
+Then we create tokenizer to convert our text dataset into numeric form
+```
+def to_lines(description):
+  lines=list()
+  for key in description.keys():
+    [lines.append(d) for d in description[key]]
+  return lines
+
+def create_tokenizer(description):
+  lines=to_lines(description)
+  tokenizer=Tokenizer()
+  tokenizer.fit_on_texts(lines)
+  return tokenizer
+
+def maxlength(description):
+  lines=to_lines(description)
+  return max(len(d.split()) for d in lines)
+```
+
+Then Finally we create our Dataset which will be input to our model
+```
+max_len=maxlength(description)
+tokenizer=create_tokenizer(description)
+vocab_size=len(tokenizer.word_index)+1
+def preprocess_dataset(description,image_features,max_len,tokenizer,vocab_size):
+  count=0
+  X1,X2,Y=list(),list(),list()
+  for key,desc in description.items():
+    for desc in description[key]:
+      seq = tokenizer.texts_to_sequences([desc])[0]
+      for i in range(1,len(seq)):
+        inp=seq[:i]
+        op=seq[i]
+        inp=pad_sequences([inp],maxlen=max_len)[0]
+        op=to_categorical([op],num_classes=vocab_size)[0]
+        if key in image_features.keys():
+          X1.append(image_features[key][0])
+          X2.append(inp)
+          Y.append(op)
+    count+=1
+  return np.array(X1),np.array(X2),np.array(Y)
+```
+Basically we create out dataset using this concept
+![alt text](https://media.mnn.com/assets/images/2017/07/dog_playing_frisbee_beach.jpg.653x0_q80_crop-smart.jpg)
+
+
 
 
