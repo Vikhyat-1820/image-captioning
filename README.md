@@ -181,7 +181,26 @@ def preprocess_dataset(description,image_features,max_len,tokenizer,vocab_size):
   return np.array(X1),np.array(X2),np.array(Y)
 ```
 Basically we create out dataset using this concept
+
 ![alt text](https://media.mnn.com/assets/images/2017/07/dog_playing_frisbee_beach.jpg.653x0_q80_crop-smart.jpg)
+
+Caption :- A dog is playing on the beach
+
+
+with these on input image and description we create this
+
+| Input                                                              |  output       |
+| ------------------------------------------------------------------ | ------------- |
+| Image + startseq                                                   | A             |
+| Image + startseq + A                                               | dog           |
+| Image + startseq + A + dog                                         | is            |
+| Image + startseq + A + dog + is                                    | playing       |
+| Image + startseq + A + dog + is + playing                          | on            |
+| Image + startseq + A + dog + is + playing + on                     | the           |
+| Image + startseq + A + dog + is + playing + on + the               | beach         |
+| Image + startseq + A + dog + is + playing + on + the + beach       | endseq        |
+
+
 
 
 
