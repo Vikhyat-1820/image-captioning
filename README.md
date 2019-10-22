@@ -201,6 +201,66 @@ with these on input image and description we create this
 | Image + startseq + A + dog + is + playing + on + the + beach       | endseq        |
 
 
+```
+traininp1,traininp2,trainoup=preprocess_dataset(traindescription,trainimage,max_len,tokenizer,vocab_size)
+```
+```
+valinp1,valinp2,valoup=preprocess_dataset(valdescription,valimage,max_len,tokenizer,vocab_size)
+```
+Then we create image caption generator model
+```
+def define_model(max_length,vocab_size):
+	inp1 = Input(shape=(4096,))
+	im1 = Dropout(0.5)(inp1)
+	im2 = Dense(256, activation='relu')(im1)
+	inp2 = Input(shape=(max_length,))
+	tx1 = Embedding(vocab_size, 256, mask_zero=True)(inp2)
+	tx2 = Dropout(0.5)(tx1)
+	tx3 = LSTM(256)(tx2)
+	comb1 = add([im2, tx3])
+	comb2 = Dense(256, activation='relu')(comb1)
+	oups = Dense(vocab_size, activation='softmax')(comb2)
+	model = Model(inputs=[inp1, inp2], outputs=oups)
+	model.compile(loss='categorical_crossentropy', optimizer='adam',metrics=['accuracy'])
+	print(model.summary())
+	return model
+```
+
+Now lets fit our model on training dataset
+```
+model = define_model(max_len,vocab_size)
+model.fit([traininp1, traininp2], trainoup, epochs=40,validation_data=([valinp1,valinp2],valoup))
+```
+
+Then we create a function which gives most word for corresponding int input from given tokenizer
+```
+def int_to_word(integer,tokenizer):
+  for word, index in tokenizer.word_index.items():
+    #print(index)
+    if index == integer:
+      return word
+  return None
+```
+
+Then a function which will generate caption for given image
+```
+def generate_desc(photo,tokenizer,max_length,vocab_size):
+  text='startseq'
+  for i in range(max_length):
+    seq=tokenizer.texts_to_sequences([text])[0]
+    seq=pad_sequences([seq],maxlen=max_length)
+    yhat=model.predict([photo,seq])
+    yhat=np.argmax(yhat)
+    #print(yhat)
+    word=int_to_word(yhat,tokenizer)
+    text=text + ' ' + word
+    if word is None:
+      break
+    if word=='endseq':
+      break
+    
+  return text
+```
 
 
 
